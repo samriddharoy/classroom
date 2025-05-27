@@ -1,49 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
- function UploadPage() {
-  const [title, setTitle] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+type FormData = {
+  title: string;
+  file: FileList;
+};
 
-  const handleUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return alert("Please select a file");
+export default function UploadPage() {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
 
-    alert(`Uploaded "${title}" with file "${file.name}"`);
-    // Upload logic will go here later
+  const onSubmit = (data: FormData) => {
+    const file = data.file[0];
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
+
+    alert(`Uploaded "${data.title}" with file "${file.name}"`);
+    // Uploading  logic  here
   };
 
   return (
     <div className="max-w-xl mx-auto mt-12 p-6 bg-white shadow-md rounded-xl">
       <h1 className="text-2xl font-bold mb-6 text-center">Upload Notes</h1>
-      <form onSubmit={handleUpload} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <Label htmlFor="title">Title</Label>
           <Input
             id="title"
             placeholder="Enter note title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
+            {...register("title", { required: true })}
           />
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1">Title is required</p>
+          )}
         </div>
+
         <div>
           <Label htmlFor="file">Upload File</Label>
           <Input
             id="file"
             type="file"
             accept=".pdf,.doc,.docx"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            required
+            {...register("file", { required: true })}
           />
+          {errors.file && (
+            <p className="text-red-500 text-sm mt-1">File is required</p>
+          )}
         </div>
+
         <Button type="submit" className="w-full">Upload</Button>
       </form>
     </div>
   );
 }
-export default UploadPage;
