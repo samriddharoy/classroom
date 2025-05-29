@@ -1,89 +1,95 @@
-'use client';
+'use client'
 
-import { useForm } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import DatePicker from "@/components/DatePicker";
-import { useState } from "react";
-
-// Define the form fields with their expected types
-type FormData = {
-  title: string;
-  file: FileList;
-};
+import { useState, useRef } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import DatePicker from '@/components/DatePicker'
 
 export default function UploadPage() {
-  // Initialize react-hook-form for form validation and submission handling
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [title, setTitle] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // State to hold the selected date from the calendar
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-  // Handle form submission
-  const onSubmit = (data: FormData) => {
-    const file = data.file[0]; // Get the first uploaded file
     if (!file) {
-      alert("Please select a file");
-      return;
+      alert('Please select a file.')
+      return
     }
 
-    // Simulate a file upload with selected date
-    alert(`Uploaded "${data.title}" with file "${file.name}" on ${selectedDate?.toDateString()}`);
-    
-    // You can replace this with your actual upload logic
-    // For example, sending form data to an API endpoint
-  };
+    setLoading(true)
+
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('file', file)
+    formData.append('uploadedAt', selectedDate?.toISOString() || new Date().toISOString())
+    formData.append('uploadedBy', 'Teacher A') // Replace with real user later
+
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert('File uploaded successfully!')
+        setTitle('')
+        setFile(null)
+        setSelectedDate(new Date())
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      } else {
+        alert(`Upload failed: ${data.message}`)
+      }
+    } catch (error) {
+      alert(`Upload failed: ${(error as Error).message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-xl mx-auto mt-12 p-6 bg-white shadow-md rounded-xl">
       <h1 className="text-2xl font-bold mb-6 text-center">Upload Notes</h1>
 
-      {/* Form begins here */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        
-        {/* Title input */}
+      <form onSubmit={handleUpload} className="space-y-5">
         <div>
-          <Label htmlFor="title">Title</Label>
+          <Label>Title</Label>
           <Input
-            id="title"
             placeholder="Enter note title"
-            {...register("title", { required: true })}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            disabled={loading}
           />
-          {errors.title && (
-            <p className="text-red-500 text-sm mt-1">Title is required</p>
-          )}
         </div>
 
-        {/* File upload input */}
         <div>
-          <Label htmlFor="file">Upload File</Label>
+          <Label>Upload File</Label>
           <Input
-            id="file"
+            ref={fileInputRef}
             type="file"
             accept=".pdf,.doc,.docx"
-            {...register("file", { required: true })}
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            required
+            disabled={loading}
           />
-          {errors.file && (
-            <p className="text-red-500 text-sm mt-1">File is required</p>
-          )}
         </div>
 
-        {/* Calendar date picker */}
         <div>
           <Label>Date of Upload</Label>
           <DatePicker onDateChange={(date) => setSelectedDate(date)} />
         </div>
 
-        {/* Submit button */}
-        <Button type="submit" className="w-full">
-          Upload
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Uploading...' : 'Upload'}
         </Button>
       </form>
     </div>
-  );
+  )
 }
