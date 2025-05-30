@@ -1,5 +1,3 @@
-// app/student/notes/page.tsx
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -17,33 +15,29 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock fetching notes data (replace with real fetch)
   useEffect(() => {
     async function fetchNotes() {
-      // Simulate network delay
-      await new Promise((r) => setTimeout(r, 500));
+      try {
+        const res = await fetch("/api/note");
+        if (!res.ok) throw new Error("Failed to fetch notes");
+        const data = await res.json();
 
-      const mockNotes: Note[] = [
-        {
-          id: "1",
-          title: "React Basics",
-          description: "Introduction to React hooks and components.",
-          uploadedBy: "Teacher A",
-          uploadedAt: "2025-05-20",
-          fileUrl: "/files/react-basics.pdf",
-        },
-        {
-          id: "2",
-          title: "Advanced JavaScript",
-          description: "Deep dive into closures, async/await.",
-          uploadedBy: "Teacher B",
-          uploadedAt: "2025-05-22",
-          fileUrl: "/files/advanced-js.pdf",
-        },
-      ];
+        // Map backend data (_id) to frontend structure (id)
+        const formatted: Note[] = data.map((note: any) => ({
+          id: note._id, // convert _id to id here
+          title: note.title,
+          description: note.description || "No description provided.",
+          uploadedBy: note.uploadedBy,
+          uploadedAt: note.uploadedAt,
+          fileUrl: note.fileUrl,
+        }));
 
-      setNotes(mockNotes);
-      setLoading(false);
+        setNotes(formatted);
+      } catch (err) {
+        console.error("Error fetching notes:", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchNotes();
@@ -80,9 +74,9 @@ export default function NotesPage() {
               </div>
 
               <a
-                href={note.fileUrl}
-                download
+                href={`/api/notes/download?id=${note.id}`}
                 className="mt-4 sm:mt-0 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                download
               >
                 Download
               </a>

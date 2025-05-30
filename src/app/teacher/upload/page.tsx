@@ -20,6 +20,10 @@ export default function UploadPage() {
       alert('Please select a file.')
       return
     }
+    if (!title.trim()) {
+      alert('Please enter a title.')
+      return
+    }
 
     setLoading(true)
 
@@ -30,12 +34,18 @@ export default function UploadPage() {
     formData.append('uploadedBy', 'Teacher A') // Replace with real user later
 
     try {
-      const res = await fetch('/api/notes', {
+      const res = await fetch('/api/notes/upload', {
         method: 'POST',
         body: formData,
       })
 
-      const data = await res.json()
+      const contentType = res.headers.get('content-type')
+      let data = null
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json()
+      } else {
+        throw new Error('Server did not return JSON. Check API route.')
+      }
 
       if (res.ok) {
         alert('File uploaded successfully!')
@@ -44,7 +54,7 @@ export default function UploadPage() {
         setSelectedDate(new Date())
         if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
-        alert(`Upload failed: ${data.message}`)
+        alert(`Upload failed: ${data?.message || 'Unknown error'}`)
       }
     } catch (error) {
       alert(`Upload failed: ${(error as Error).message}`)
