@@ -18,9 +18,11 @@ export default function NotesPage() {
   useEffect(() => {
     async function fetchNotes() {
       try {
-        const res = await fetch("/api/note");
-        if (!res.ok) throw new Error("Failed to fetch notes");
-        const data = await res.json();
+        const res = await fetch("/api/notes", { method: "GET" });
+        // if (!res.ok) throw new Error("Failed to fetch notes");
+        const data_received = await res.json();
+        console.log("received_data", data_received.data);
+        const data: Note[] = data_received.data;
 
         // Map backend data (_id) to frontend structure (id)
         const formatted: Note[] = data.map((note: any) => ({

@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
           )
         }
 
+        // adding note to mongodb database.
         const newNote = new Note({
           title,
           uploadedBy,
