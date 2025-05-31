@@ -1,6 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 type Note = {
   id: string;
@@ -14,19 +22,21 @@ type Note = {
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState<{
+    type: "default" | "destructive";
+    title: string;
+    description?: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchNotes() {
       try {
         const res = await fetch("/api/notes", { method: "GET" });
-        // if (!res.ok) throw new Error("Failed to fetch notes");
         const data_received = await res.json();
-        console.log("received_data", data_received.data);
         const data: Note[] = data_received.data;
 
-        // Map backend data (_id) to frontend structure (id)
         const formatted: Note[] = data.map((note: any) => ({
-          id: note._id, // convert _id to id here
+          id: note._id,
           title: note.title,
           description: note.description || "No description provided.",
           uploadedBy: note.uploadedBy,
@@ -37,6 +47,11 @@ export default function NotesPage() {
         setNotes(formatted);
       } catch (err) {
         console.error("Error fetching notes:", err);
+        setAlert({
+          type: "destructive",
+          title: "Fetch Failed",
+          description: "Could not load notes. Please try again later.",
+        });
       } finally {
         setLoading(false);
       }
@@ -44,6 +59,38 @@ export default function NotesPage() {
 
     fetchNotes();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    const confirmDelete = confirm("Are you sure you want to delete this note?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/notes/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const error = await res.json();
+        setAlert({
+          type: "destructive",
+          title: "Delete Failed",
+          description: error.message || "Unknown error occurred.",
+        });
+        return;
+      }
+
+      setNotes((prev) => prev.filter((note) => note.id !== id));
+      setAlert({
+        type: "default",
+        title: "Deleted",
+        description: "The note has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Delete error:", error);
+      setAlert({
+        type: "destructive",
+        title: "Delete Error",
+        description: "Something went wrong while deleting the note.",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -54,37 +101,49 @@ export default function NotesPage() {
   }
 
   return (
-    <main className="p-6 max-w-4xl mx-auto">
+    <main className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold mb-6">Student Notes</h1>
+
+      {/* Alert outside cards */}
+      {alert && (
+        <Alert variant={alert.type}>
+          <AlertTitle>{alert.title}</AlertTitle>
+          {alert.description && <AlertDescription>{alert.description}</AlertDescription>}
+        </Alert>
+      )}
 
       {notes.length === 0 ? (
         <p>No notes available.</p>
       ) : (
-        <ul className="space-y-4">
-          {notes.map((note) => (
-            <li
-              key={note.id}
-              className="border rounded-lg p-4 shadow hover:shadow-md transition flex flex-col sm:flex-row sm:justify-between sm:items-center"
-            >
-              <div>
-                <h2 className="text-xl font-semibold">{note.title}</h2>
-                <p className="text-gray-700 mt-1">{note.description}</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Uploaded by: {note.uploadedBy} |{" "}
-                  {new Date(note.uploadedAt).toLocaleDateString()}
-                </p>
-              </div>
-
+        notes.map((note) => (
+          <Card key={note.id} className="shadow-md hover:shadow-lg transition">
+            <CardHeader>
+              <CardTitle>{note.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700">{note.description}</p>
+              <p className="text-sm text-gray-500 mt-3">
+                Uploaded by: {note.uploadedBy} |{" "}
+                {new Date(note.uploadedAt).toLocaleDateString()}
+              </p>
+            </CardContent>
+            <CardFooter className="flex gap-3 justify-end">
               <a
                 href={`/api/notes/download?id=${note.id}`}
-                className="mt-4 sm:mt-0 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                 download
               >
                 Download
               </a>
-            </li>
-          ))}
-        </ul>
+              <button
+                onClick={() => handleDelete(note.id)}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </CardFooter>
+          </Card>
+        ))
       )}
     </main>
   );

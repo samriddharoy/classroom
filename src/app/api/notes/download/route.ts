@@ -1,47 +1,47 @@
+import { connectToDatabase } from "@/lib/mongodb";
+import Notes from "@/models/notes";
+import { writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { join } from "path";
-import fs from "fs/promises";
-import Notes from "@/models/notes";
-import { connectToDatabase } from "@/lib/mongodb";
 
-export async function GET(req: Request) {
-  await connectToDatabase();
-
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-
-  if (!id) {
-    return NextResponse.json({ error: "No ID provided" }, { status: 400 });
-  }
-
+export async function POST(req: Request) {
   try {
-    const note = await Notes.findById(id);
-    if (!note) {
-      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    const formData = await req.formData();
+
+    const title = formData.get("title") as string;
+    // Add fallback to empty string if description is missing
+    const description = (formData.get("description") as string) || "";
+    const uploadedBy = formData.get("uploadedBy") as string;
+    const uploadedAt = formData.get("uploadedAt") as string;
+    const file = formData.get("file") as File;
+
+    console.log("Description received:", description); // Debug log
+
+    if (!file || !title || !uploadedBy || !uploadedAt) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    const filePath = join(process.cwd(), "public", note.fileUrl);
+    // Save file to /public/uploads
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const fileName = `${Date.now()}_${file.name}`;
+    const filePath = join(process.cwd(), "public/uploads", fileName);
 
-    // Check if file exists asynchronously
-    try {
-      await fs.access(filePath);
-    } catch {
-      return NextResponse.json({ error: "File not found on server" }, { status: 404 });
-    }
+    await writeFile(filePath, buffer);
 
-    // Read entire file into memory (Buffer)
-    const fileBuffer = await fs.readFile(filePath);
+    await connectToDatabase();
 
-    const fileName = note.fileUrl.split("/").pop() || "file";
-
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-      },
+    const newNote = await Notes.create({
+      title,
+      description,
+      uploadedBy,
+      uploadedAt,
+      fileUrl: `/uploads/${fileName}`,
     });
+
+    return NextResponse.json(newNote);
   } catch (error) {
-    console.error("Download error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Upload error:", error);
+    return NextResponse.json({ message: "Upload failed" }, { status: 500 });
   }
 }
