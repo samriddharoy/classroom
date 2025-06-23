@@ -26,17 +26,17 @@ export default function Home() {
 
         <CardContent className="flex flex-col gap-6 items-center">
           <button
-            onClick={() => router.push("/teacher/upload")}
+            onClick={() => router.push("/login?role=teacher")}
             className="w-full px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            Teacher: Upload Notes
+            Teacher: Login
           </button>
 
           <button
-            onClick={() => router.push("/student/notes")}
+            onClick={() => router.push("/login?role=student")}
             className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
           >
-            Student: Download Notes
+            Student: Login
           </button>
         </CardContent>
       </Card>

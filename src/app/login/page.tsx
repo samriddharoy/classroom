@@ -1,12 +1,19 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const { register, handleSubmit } = useForm();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role");
 
   const onSubmit = async (data: any) => {
     const res = await fetch("/api/login", {
@@ -15,9 +22,11 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      const { role } = await res.json();
-      if (role === "teacher") router.push("/teacher/upload");
-      else router.push("/student/notes");
+      if (role === "teacher") {
+        router.push("/teacher/upload");
+      } else {
+        router.push("/student/notes");
+      }
     } else {
       alert("Login failed");
     }
@@ -27,7 +36,9 @@ export default function LoginPage() {
     <div className="flex justify-center items-center min-h-screen bg-background">
       <Card className="w-full max-w-md shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            {role === "teacher" ? "Teacher Login" : "Student Login"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
