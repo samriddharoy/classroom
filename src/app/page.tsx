@@ -25,19 +25,43 @@ export default function Home() {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-6 items-center">
-          <button
-            onClick={() => router.push("/login?role=teacher")}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Teacher: Login
-          </button>
+          {/* Teacher Section */}
+          <div className="w-full">
+            <button
+              onClick={() => router.push("/signup?role=teacher")}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              Teacher: Sign Up
+            </button>
+            <p className="text-center text-sm mt-2">
+              Already registered?{" "}
+              <button
+                onClick={() => router.push("/login?role=teacher")}
+                className="text-blue-600 underline"
+              >
+                Login as Teacher
+              </button>
+            </p>
+          </div>
 
-          <button
-            onClick={() => router.push("/login?role=student")}
-            className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
-          >
-            Student: Login
-          </button>
+          {/* Student Section */}
+          <div className="w-full">
+            <button
+              onClick={() => router.push("/signup?role=student")}
+              className="w-full px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            >
+              Student: Sign Up
+            </button>
+            <p className="text-center text-sm mt-2">
+              Already registered?{" "}
+              <button
+                onClick={() => router.push("/login?role=student")}
+                className="text-green-600 underline"
+              >
+                Login as Student
+              </button>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

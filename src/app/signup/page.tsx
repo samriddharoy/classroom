@@ -1,21 +1,30 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function SignupPage() {
-  const { register, handleSubmit } = useForm();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role");
+
+  const { register, handleSubmit } = useForm();
 
   const onSubmit = async (data: any) => {
     const res = await fetch("/api/signup", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, role }),
     });
 
     if (res.ok) {
-      router.push("/login");
+      // After successful signup, go to login with the same role
+      router.push(`/login?role=${role}`);
     } else {
       alert("Signup failed");
     }
@@ -25,7 +34,9 @@ export default function SignupPage() {
     <div className="flex justify-center items-center min-h-screen bg-background">
       <Card className="w-full max-w-md shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            {role === "teacher" ? "Teacher Sign Up" : "Student Sign Up"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -52,6 +63,17 @@ export default function SignupPage() {
             >
               Sign Up
             </button>
+
+            <p className="text-center text-sm mt-2">
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => router.push(`/login?role=${role}`)}
+                className="text-blue-600 underline"
+              >
+                Login
+              </button>
+            </p>
           </form>
         </CardContent>
       </Card>

@@ -1,35 +1,31 @@
+// app/api/signup/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
-import User from "@/models/userModel";
 import bcrypt from "bcryptjs";
+import User from "@/models/userModel"; // your mongoose user model
+import { connectToDatabase } from "@/lib/mongodb"; // your DB connection logic
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { name, email, password } = body;
-
+    const { name, email, password, role } = await req.json();
     await connectToDatabase();
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return NextResponse.json({ message: "User already exists" }, { status: 400 });
+      return NextResponse.json({ error: "User already exists" }, { status: 400 });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
     const newUser = new User({
-      username: name,
+      name,
       email,
       password: hashedPassword,
+      role,
     });
 
     await newUser.save();
-
-    return NextResponse.json({ message: "User created successfully" }, { status: 201 });
+    return NextResponse.json({ message: "User created successfully" });
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
   }
 }
